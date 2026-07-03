@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sunu-Idée</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+          colors: {
+            brand: '#4F46E5',
+            'brand-dark': '#3730A3',
+            'brand-light': '#EEF2FF',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    /* Catégorie couleurs */
+    .badge-pedagogie    { background:#EEF2FF; color:#4F46E5; }
+    .badge-evenement    { background:#FFFBEB; color:#D97706; }
+    .badge-campus       { background:#F0FDF4; color:#16A34A; }
+    .badge-tech         { background:#FFF1F2; color:#E11D48; }
+
+    .border-pedagogie   { border-color:#4F46E5; }
+    .border-evenement   { border-color:#D97706; }
+    .border-campus      { border-color:#16A34A; }
+    .border-tech        { border-color:#E11D48; }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from { opacity:0; transform:translateY(16px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity:0; }
+      to   { opacity:1; }
+    }
+    .card-enter { animation: fadeInUp .35s ease forwards; }
+    .modal-enter { animation: fadeIn .2s ease forwards; }
+
+    /* Scrollbar */
+    #liste-idees::-webkit-scrollbar { width:6px; }
+    #liste-idees::-webkit-scrollbar-track { background:#F1F5F9; border-radius:99px; }
+    #liste-idees::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius:99px; }
+
+    /* Custom select arrow */
+    select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; }
+
+    /* Vue liste */
+    .view-list .idea-card {
+      display:flex; flex-direction:row; align-items:flex-start; gap:16px;
+    }
+    .view-list .idea-card .card-body { flex:1; }
+
+    /* Skeleton */
+    @keyframes shimmer { 0%{background-position:-700px 0} 100%{background-position:700px 0} }
+    .skeleton { background:linear-gradient(90deg,#F1F5F9 25%,#E2E8F0 50%,#F1F5F9 75%); background-size:700px 100%; animation:shimmer 1.4s infinite; border-radius:8px; }
+  </style>
+</head>
+
+<body class="bg-[#F8F9FB] min-h-screen">
+
+  <!-- ═══════════════════════════════════════════
+       HEADER
+  ════════════════════════════════════════════ -->
+  <header class="bg-white border-b border-slate-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+      <!-- Desktop Header -->
+      <div class="hidden md:flex items-center justify-between py-5">
+        <div>
+          <div class="flex items-center gap-3 mb-1">
+            <div class="w-9 h-9 rounded-xl bg-brand-light flex items-center justify-center">
+              <svg width="20" height="40" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.2"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><path d="M9 21h6"/><path d="M9 18h6"/></svg>
+            </div>
+            <h1 class="text-xl font-bold text-slate-900">Sunu-Idée</h1>
+          </div>
+          <p class="text-slate-500 text-sm ml-12">Partagez vos idées, améliorez la communauté.</p>
+        </div>
+
+        <img src="src/assets/images/sunu-logo.png" alt="Logo Sunu Idées"  style="width:140px; height:120px; object-fit:contain;" class="logo">
+        <!-- Illustration desktop -->
+        <div class="flex items-center gap-6">
+          <div id="stats-header" class="text-right hidden">
+            <span class="text-2xl font-bold text-brand" id="count-header">0</span>
+            <p class="text-xs text-slate-500">idées actives</p>
+          </div>
+          
+        </div>
+      </div>
+
+      <!-- Mobile Header -->
+      <div class="flex md:hidden items-center justify-between py-4">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-brand-light flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.5"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><path d="M9 21h6"/><path d="M9 18h6"/></svg>
+          </div>
+          <span class="font-bold text-slate-900 text-lg">Sunu-Idée</span>
+        </div>
+        <button class="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════
+       MOBILE: Hero Banner
+  ════════════════════════════════════════════ -->
+  <div class="md:hidden bg-brand-light border-b border-indigo-100 px-4 py-5">
+    <h2 class="font-bold text-slate-900 text-lg mb-1">Bienvenue sur votre espace</h2>
+    <p class="text-slate-600 text-sm mb-3">Partagez vos idées pour améliorer notre campus. Chaque voix compte pour construire demain.</p>
+    <span id="mobile-count-badge" class="inline-flex items-center gap-1.5 text-brand font-semibold text-sm">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+      <span id="mobile-count">0</span> Idées actives
+    </span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       MAIN LAYOUT
+  ════════════════════════════════════════════ -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+    <div class="flex flex-col md:flex-row gap-6">
+
+      <!-- ─────────────────────────────────────
+           SIDEBAR : Formulaire + Filtres
+      ────────────────────────────────────── -->
+      <aside class="w-full md:w-72 lg:w-80 flex-shrink-0 space-y-4">
+
+        <!-- Formulaire -->
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+          <div class="flex items-center gap-2 mb-5">
+            <div class="w-6 h-6 rounded-full bg-brand flex items-center justify-center">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </div>
+            <h2 class="font-bold text-slate-900 text-base" id="form-title">Ajouter une idée</h2>
+          </div>
+
+          <form id="idee-form" class="space-y-4" novalidate>
+
+            <div>
+              <label for="titre" class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">Titre de l'idée</label>
+              <input
+                type="text" id="titre" required
+                placeholder="Ex: Nouvel espace détente..."
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition" />
+            </div>
+
+            <div>
+              <label for="categorie" class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">Catégorie</label>
+              <select id="categorie" required
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition bg-white pr-10">
+                <option value="">Sélectionner une catégorie</option>
+                <option value="Pédagogie">Pédagogie</option>
+                <option value="Événement">Événement</option>
+                <option value="Vie de campus">Vie de campus</option>
+                <option value="Amélioration technique">Amélioration technique</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="description" class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">Description</label>
+              <textarea id="description" required rows="4"
+                placeholder="Décrivez votre idée en détail..."
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition resize-none"></textarea>
+            </div>
+
+            <button type="submit" id="submit-btn"
+              class="w-full py-3 px-4 rounded-xl bg-brand text-white font-semibold text-sm transition hover:bg-brand-dark active:scale-[.98] shadow-sm flex items-center justify-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m22 2-7 20-4-9-9-4z"/></svg>
+              Publier l'idée
+            </button>
+
+            <!-- Message de chargement IA -->
+             <div id="ia-status"
+              class="hidden text-center text-sm text-indigo-600 font-medium">
+                🤖 Analyse de l'idée en cours...
+             </div>
+
+          </form>
+        </div>
+
+        <!-- Recherche + Filtres -->
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-3">
+          <!-- Recherche -->
+          <div class="relative">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input id="search-input" type="text" placeholder="Rechercher des idées..."
+              class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition text-slate-800 placeholder-slate-400" />
+          </div>
+          <!-- Filtres -->
+          <div class="flex gap-2">
+            <select id="filter-categorie"
+              class="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition bg-white">
+              <option value="">Toutes catégories</option>
+              <option value="Pédagogie">Pédagogie</option>
+              <option value="Événement">Événement</option>
+              <option value="Vie de campus">Vie de campus</option>
+              <option value="Amélioration technique">Amélioration technique</option>
+            </select>
+            <select id="filter-tri"
+              class="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition bg-white">
+              <option value="recent">Plus récent</option>
+              <option value="ancien">Plus ancien</option>
+            </select>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- ─────────────────────────────────────
+           MUR D'IDÉES
+      ────────────────────────────────────── -->
+      <section class="flex-1 min-w-0">
+
+        <!-- Titre + Compteur + Vue toggle -->
+        <div class="flex items-center justify-between mb-5">
+          <div class="flex items-center gap-2.5">
+            <h2 class="text-lg font-bold text-slate-900">Toutes les idées</h2>
+            <span id="count-badge" class="bg-brand-light text-brand text-xs font-bold px-2.5 py-0.5 rounded-full">0</span>
+          </div>
+          <!-- Vue toggle desktop uniquement -->
+          <div class="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+            <button id="btn-grid" onclick="setView('grid')" title="Vue grille"
+              class="view-btn active-view p-1.5 rounded-lg transition">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            </button>
+            <button id="btn-list" onclick="setView('list')" title="Vue liste"
+              class="view-btn p-1.5 rounded-lg transition text-slate-400">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Container cartes -->
+        <div id="liste-idees"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 transition-all">
+          <!-- Cartes générées par JS -->
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <!-- ═══════════════════════════════════════════
+       FOOTER
+  ════════════════════════════════════════════ -->
+  <footer class="border-t border-slate-100 bg-white mt-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <p class="text-sm text-slate-500">
+        <span class="font-semibold text-slate-700">Sunu-Idée</span> — Plateforme collaborative de partage d'idées.
+      </p>
+      <div class="flex items-center gap-5 text-sm text-slate-500">
+        <a href="#" class="flex items-center gap-1.5 hover:text-slate-800 transition">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+        <a href="#" class="flex items-center gap-1.5 hover:text-slate-800 transition">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Documentation
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════════════
+       MODAL : MODIFIER
+  ════════════════════════════════════════════ -->
+  <div id="modal-modifier" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="fermerModalModifier()"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md modal-enter p-6">
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-2.5">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          <h3 class="font-bold text-slate-900 text-lg">Modifier l'idée</h3>
+        </div>
+        <button onclick="fermerModalModifier()" class="text-slate-400 hover:text-slate-700 transition p-1 rounded-lg hover:bg-slate-100">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Titre de l'idée</label>
+          <input type="text" id="modal-titre"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Description</label>
+          <textarea id="modal-description" rows="5"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition resize-none"></textarea>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 mt-6">
+        <button onclick="fermerModalModifier()"
+          class="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900 transition rounded-xl hover:bg-slate-100">
+          Annuler
+        </button>
+        <button onclick="sauvegarderModification()"
+          class="px-5 py-2.5 bg-brand text-white text-sm font-semibold rounded-xl hover:bg-brand-dark transition shadow-sm">
+          Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       MODAL : CONFIRMER SUPPRESSION
+  ════════════════════════════════════════════ -->
+  <div id="modal-supprimer" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="fermerModalSupprimer()"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm modal-enter overflow-hidden">
+      <!-- Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+        <div class="flex items-center gap-2.5">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          <h3 class="font-bold text-slate-900 text-base">Supprimer l'idée</h3>
+        </div>
+        <button onclick="fermerModalSupprimer()" class="text-slate-400 hover:text-slate-700 transition p-1 rounded-lg hover:bg-slate-100">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <!-- Body -->
+      <div class="px-6 py-6 text-center">
+        <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <p class="text-slate-700 text-sm mb-1">Êtes-vous sûr de vouloir supprimer cette idée ?</p>
+        <p class="text-red-500 font-semibold text-sm mb-4">Cette action est irréversible.</p>
+        <!-- Avatars fictifs -->
+        <div class="flex items-center justify-center gap-2 py-3 border-y border-slate-100">
+          <div class="flex -space-x-2">
+            <div class="w-7 h-7 rounded-full bg-indigo-200 border-2 border-white flex items-center justify-center text-xs font-bold text-indigo-600">M</div>
+            <div class="w-7 h-7 rounded-full bg-orange-200 border-2 border-white flex items-center justify-center text-xs font-bold text-orange-600">A</div>
+            <div class="w-7 h-7 rounded-full bg-green-200 border-2 border-white flex items-center justify-center text-xs font-bold text-green-600">Y</div>
+          </div>
+          <span class="text-xs text-slate-500">L'avis des contributeurs sera perdu.</span>
+        </div>
+      </div>
+      <!-- Footer -->
+      <div class="flex items-center justify-end gap-3 px-6 pb-5">
+        <button onclick="fermerModalSupprimer()"
+          class="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900 transition rounded-xl hover:bg-slate-100">
+          Annuler
+        </button>
+        <button onclick="confirmerSuppression()"
+          class="px-5 py-2.5 bg-red-500 text-white text-sm font-semibold rounded-xl hover:bg-red-600 transition shadow-sm">
+          Supprimer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 hidden">
+    <div class="bg-slate-900 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg flex items-center gap-2.5 modal-enter">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      <span id="toast-msg">Action effectuée</span>
+    </div>
+  </div>
+
+   <script type="module" src="/src/main.js"></script>
+</body>
+</html>
+
