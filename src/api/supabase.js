@@ -41,11 +41,11 @@ export async function enregistrerIdee(titre, categorie,description) {
         return data;
     } catch (error) {
         console.error("Erreur lors de l'enregistrement de l'idée :", error.message);
-        throw error; // On propage l'erreur pour que le main.js puisse avertir l'utilisateur
+        throw error; 
     }
 }
 
-// Requête UPDATE sur Supabase
+// Requête UPDATE 
 export async function modifierIdeeEnBase(id, nouveauTitre, nouvelleDesc) {
     const { error } = await supabase
         .from('ideas')
@@ -56,7 +56,6 @@ export async function modifierIdeeEnBase(id, nouveauTitre, nouvelleDesc) {
 }
 
 
-// Dans supabase.js
 export async function supprimerIdeeEnBase(id) {
     const { error } = await supabase
         .from('ideas')
